@@ -1,35 +1,42 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import CategoriesPage from './pages/CategoriesPage';
+import MonthlyPage from './pages/MonthlyPage';
+import YearlyPage from './pages/YearlyPage';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [page, setPage] = useState('monthly');
+
+  const navStyle = (name) => ({
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: 14,
+    background: page === name ? '#3b82f6' : '#e2e8f0',
+    color: page === name ? 'white' : '#475569'
+  });
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
 
-export default App
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', marginBottom: 4 }}>
+          HomeLedger
+        </h1>
+        <p style={{ color: '#64748b', fontSize: 14 }}>Household expense tracker</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <button style={navStyle('monthly')} onClick={() => setPage('monthly')}>Monthly</button>
+        <button style={navStyle('yearly')} onClick={() => setPage('yearly')}>Yearly</button>
+        <button style={navStyle('categories')} onClick={() => setPage('categories')}>Categories</button>
+      </div>
+
+      {page === 'monthly' && <MonthlyPage />}
+      {page === 'yearly' && <YearlyPage />}
+      {page === 'categories' && <CategoriesPage />}
+
+    </div>
+  );
+}
