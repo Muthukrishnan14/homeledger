@@ -40,11 +40,10 @@ export default function MonthlyPage() {
   const [subCats, setSubCats]       = useState([]);
   const [categories, setCats]       = useState([]);
   const [editMode, setEditMode]     = useState(false);
-  const [showForm, setShowForm]     = useState(false);
   const [localAmts, setLocalAmts]   = useState({});
   const [yearTotals, setYearTotals] = useState({});
   const [addRows, setAddRows]       = useState({});   // { [catId]: { name:'', amount:'' } }
-  const [form, setForm]             = useState({ subCategoryId:'', amount:'', date:'', note:'' });
+  const [quickAdd, setQuickAdd]     = useState({});   // { [subId]: string } — inline + input per row
 
   const monthKey = `${year}-${String(month).padStart(2,'0')}`;
   const prevM    = month === 1 ? 12 : month - 1;
@@ -66,6 +65,9 @@ export default function MonthlyPage() {
   };
 
   useEffect(() => {
+    setLocalAmts({});   // ← clear edited amounts when month changes (fixes carry-forward bug)
+    setAddRows({});     // ← clear any in-progress add rows too
+    setQuickAdd({});    // ← clear any open quick-add inputs too
     transactionsAPI.getByMonth(monthKey).then(r => setTxns(r.data));
     transactionsAPI.getByMonth(prevKey).then(r => setPrevTxns(r.data));
     fetchYearTotals();
@@ -161,18 +163,26 @@ export default function MonthlyPage() {
     subCategoriesAPI.getAll().then(r => setSubCats(r.data));
     transactionsAPI.getByMonth(monthKey).then(r => setTxns(r.data));
   };
-  // ─────────────────────────────────────────────────────────────────────────
 
-  const handleSubmit = async () => {
-    if (!form.subCategoryId || !form.amount || !form.date) return;
-    await transactionsAPI.create({ subCategoryId: form.subCategoryId, amount: parseFloat(form.amount), date: form.date, note: form.note });
-    setForm({ subCategoryId:'', amount:'', date:'', note:'' });
-    setShowForm(false);
+  // ── Quick-add: add an amount on top of existing total for a sub-category ──
+  const closeQuickAdd = (subId) =>
+    setQuickAdd(p => { const n = { ...p }; delete n[subId]; return n; });
+
+  const handleQuickAdd = async (subId) => {
+    const addVal = parseFloat(quickAdd[subId]);
+    if (isNaN(addVal) || addVal <= 0) { closeQuickAdd(subId); return; }
+    await transactionsAPI.create({
+      subCategoryId: subId,
+      amount: addVal,
+      date: `${year}-${String(month).padStart(2,'0')}-01`,
+      note: ''
+    });
+    closeQuickAdd(subId);
     transactionsAPI.getByMonth(monthKey).then(r => setTxns(r.data));
   };
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const card  = { background:'white', borderRadius:12, padding:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' };
-  const input = { padding:'8px 12px', borderRadius:8, border:'1.5px solid #e2e8f0', fontSize:14, width:'100%', outline:'none' };
+  const card = { background:'white', borderRadius:12, padding:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' };
 
   return (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:16, alignItems:'start' }}>
@@ -194,16 +204,10 @@ export default function MonthlyPage() {
             </div>
             <button onClick={()=>handleNav(1)} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:8, padding:'6px 12px', cursor:'pointer', color:'white', fontSize:18 }}>›</button>
           </div>
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={()=>{ setEditMode(e=>!e); setLocalAmts({}); setAddRows({}); }}
-              style={{ padding:'10px 16px', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:13, border: editMode?'2px solid #fbbf24':'2px solid rgba(255,255,255,0.3)', background: editMode?'#f59e0b':'rgba(255,255,255,0.15)', color:'white' }}>
-              {editMode ? '🔓' : '🔒'} Edit Amounts
-            </button>
-            <button onClick={()=>setShowForm(s=>!s)}
-              style={{ padding:'10px 18px', borderRadius:8, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:'white', color:'#1e40af' }}>
-              + Add Expense
-            </button>
-          </div>
+          <button onClick={()=>{ setEditMode(e=>!e); setLocalAmts({}); setAddRows({}); setQuickAdd({}); }}
+            style={{ padding:'10px 16px', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:13, border: editMode?'2px solid #fbbf24':'2px solid rgba(255,255,255,0.3)', background: editMode?'#f59e0b':'rgba(255,255,255,0.15)', color:'white' }}>
+            {editMode ? '🔓' : '🔒'} Edit Amounts
+          </button>
         </div>
 
         {/* Month navigation bar */}
@@ -230,32 +234,6 @@ export default function MonthlyPage() {
             );
           })}
         </div>
-
-        {/* Add form */}
-        {showForm && (
-          <div style={card}>
-            <h3 style={{ marginBottom:16, fontWeight:700 }}>New Expense</h3>
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <select value={form.subCategoryId} onChange={e=>setForm({...form,subCategoryId:e.target.value})} style={input}>
-                <option value=''>Select category</option>
-                {categories.map(cat => (
-                  <optgroup key={cat._id} label={cat.name}>
-                    {subCats.filter(s=>s.categoryId&&s.categoryId._id===cat._id).map(sub=>(
-                      <option key={sub._id} value={sub._id}>{sub.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <input type="number" placeholder="Amount" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} style={input}/>
-              <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} style={input}/>
-              <input type="text" placeholder="Note (optional)" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={input}/>
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>setShowForm(false)} style={{ flex:1, padding:10, borderRadius:8, border:'1.5px solid #e2e8f0', cursor:'pointer', background:'white', fontWeight:600 }}>Cancel</button>
-                <button onClick={handleSubmit} style={{ flex:2, padding:10, borderRadius:8, border:'none', cursor:'pointer', background:'#3b82f6', color:'white', fontWeight:700 }}>Save</button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Category groups */}
         {categories.map((cat, ci) => {
@@ -309,8 +287,35 @@ export default function MonthlyPage() {
                             style={{ width:70, padding:'3px 6px', borderRadius:6, border:'1.5px solid #3b82f6', fontSize:13, fontWeight:700, textAlign:'right', outline:'none', background:'#eff6ff' }}
                           />
                         </div>
+                      ) : quickAdd[sub._id] !== undefined ? (
+                        // Additive quick-add input
+                        <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+                          <span style={{ fontSize:11, color:'#10b981', fontWeight:600 }}>+$</span>
+                          <input
+                            type="number" min="0" step="0.01" autoFocus
+                            value={quickAdd[sub._id]}
+                            onChange={e => setQuickAdd(p => ({...p, [sub._id]: e.target.value}))}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter')  handleQuickAdd(sub._id);
+                              if (e.key === 'Escape') closeQuickAdd(sub._id);
+                            }}
+                            onBlur={() => handleQuickAdd(sub._id)}
+                            style={{ width:60, padding:'2px 6px', borderRadius:6, border:'1.5px solid #10b981', fontSize:12, fontWeight:700, textAlign:'right', outline:'none', background:'#f0fdf4' }}
+                          />
+                          <button onClick={() => closeQuickAdd(sub._id)}
+                            style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:13, padding:'0 2px', lineHeight:1 }}>✕</button>
+                        </div>
                       ) : (
-                        <span style={{ fontWeight:600, fontSize:13, color:'#1e293b' }}>${val.toLocaleString()}</span>
+                        // Normal view — amount + small green + button
+                        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                          <span style={{ fontWeight:600, fontSize:13, color:'#1e293b' }}>${val.toLocaleString()}</span>
+                          <button
+                            onClick={() => setQuickAdd(p => ({...p, [sub._id]: ''}))}
+                            title="Add to this amount"
+                            style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:4, cursor:'pointer', color:'#10b981', fontSize:11, fontWeight:700, padding:'1px 6px', lineHeight:'16px' }}>
+                            +
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
