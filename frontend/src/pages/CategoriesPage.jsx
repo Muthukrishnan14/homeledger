@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { categoriesAPI, subCategoriesAPI } from '../api';
+import useIsMobile from '../useIsMobile';
 
 export default function CategoriesPage() {
+  const isMobile = useIsMobile();
   const [categories, setCategories] = useState([]);
   const [newCatName, setNewCatName] = useState('');
   const [newSubName, setNewSubName] = useState('');
@@ -62,7 +64,7 @@ export default function CategoriesPage() {
   const cardStyle = {
     background: 'white',
     borderRadius: 12,
-    padding: 20,
+    padding: isMobile ? 14 : 20,
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
   };
 
@@ -72,7 +74,8 @@ export default function CategoriesPage() {
     border: '1.5px solid #e2e8f0',
     fontSize: 14,
     outline: 'none',
-    flex: 1
+    flex: 1,
+    minWidth: 0,
   };
 
   const btnStyle = (color = '#3b82f6') => ({
@@ -83,11 +86,12 @@ export default function CategoriesPage() {
     fontWeight: 600,
     fontSize: 14,
     background: color,
-    color: 'white'
+    color: 'white',
+    flexShrink: 0,
   });
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 16 }}>
 
       {/* Left — Categories */}
       <div style={cardStyle}>
@@ -154,20 +158,22 @@ export default function CategoriesPage() {
               <div key={sub._id}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', borderRadius: 8, marginBottom: 6, background: '#f8fafc'
+                  padding: '10px 12px', borderRadius: 8, marginBottom: 6, background: '#f8fafc',
+                  gap: 8,
                 }}>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
                   <span style={{ fontWeight: 600, fontSize: 14 }}>{sub.name}</span>
                   <span style={{
-                    marginLeft: 8, fontSize: 11, padding: '2px 8px', borderRadius: 20,
+                    fontSize: 11, padding: '2px 8px', borderRadius: 20,
                     background: sub.isFixed ? '#dcfce7' : '#fef9c3',
-                    color: sub.isFixed ? '#16a34a' : '#ca8a04'
+                    color: sub.isFixed ? '#16a34a' : '#ca8a04',
+                    whiteSpace: 'nowrap',
                   }}>
                     {sub.isFixed ? 'Fixed' : 'Flexible'}
                   </span>
                 </div>
                 <button onClick={() => handleDeleteSubCategory(sub._id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 16 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 16, flexShrink: 0 }}>
                   ✕
                 </button>
               </div>

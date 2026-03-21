@@ -24,3 +24,9 @@ export const transactionsAPI = {
   update: (id, data) => api.put(`/transactions/${id}`, data),
   delete: (id) => api.delete(`/transactions/${id}`)
 };
+
+export const activityLogsAPI = {
+  getByMonth: (month) => api.get('/activity-logs', { params: { month } }),
+  getRecent: (subCategoryId, hours = 4) =>
+    api.get('/activity-logs/recent', { params: { subCategoryId, hours } }),
+};

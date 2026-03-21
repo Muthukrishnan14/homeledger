@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { transactionsAPI } from '../api';
+import useIsMobile from '../useIsMobile';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 export default function AnalyticsPage() {
+  const isMobile = useIsMobile();
   const now          = new Date();
   const curMonth     = now.getMonth() + 1;
   const curYear      = now.getFullYear();
@@ -83,31 +85,31 @@ export default function AnalyticsPage() {
     }).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change));
   }, [allData, curSubTotals]);
 
-  const card = { background:'white', borderRadius:12, padding:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' };
+  const card = { background:'white', borderRadius:12, padding: isMobile ? 14 : 20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' };
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap: isMobile ? 12 : 16 }}>
 
       {/* Stat cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: isMobile ? 8 : 12 }}>
         <div style={card}>
           <div style={{ fontSize:12, color:'#64748b', marginBottom:4 }}>This month vs last month</div>
           <div style={{ fontSize:11, color:'#94a3b8', marginBottom:8 }}>{MONTHS[curMonth-1]} vs {MONTHS[prevMonth-1]}</div>
-          <div style={{ fontSize:24, fontWeight:700, color: monthDiff>0?'#ef4444':'#22c55e' }}>
+          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight:700, color: monthDiff>0?'#ef4444':'#22c55e' }}>
             {monthDiff>0?'▼':'▲'} ${Math.abs(monthDiff).toFixed(2)}
           </div>
         </div>
         <div style={card}>
           <div style={{ fontSize:12, color:'#64748b', marginBottom:4 }}>Highest spend month</div>
           <div style={{ fontSize:15, fontWeight:600, color:'#f59e0b', marginBottom:8 }}>{highestMonth.month}</div>
-          <div style={{ fontSize:24, fontWeight:700, color:'#1e293b' }}>${highestMonth.total.toLocaleString()}</div>
+          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight:700, color:'#1e293b' }}>${highestMonth.total.toLocaleString()}</div>
         </div>
         <div style={card}>
-          <div style={{ fontSize:12, color:'#64748b', marginBottom:4 }}>Most expensive category this month</div>
+          <div style={{ fontSize:12, color:'#64748b', marginBottom:4 }}>Most expensive category</div>
           {curSubTotals[0] && (
             <>
               <div style={{ fontSize:15, fontWeight:600, color:'#3b82f6', marginBottom:8 }}>{curSubTotals[0][0]}</div>
-              <div style={{ fontSize:24, fontWeight:700, color:'#1e293b' }}>${curSubTotals[0][1].toLocaleString()}</div>
+              <div style={{ fontSize: isMobile ? 20 : 24, fontWeight:700, color:'#1e293b' }}>${curSubTotals[0][1].toLocaleString()}</div>
             </>
           )}
         </div>
@@ -116,14 +118,22 @@ export default function AnalyticsPage() {
       {/* Spent more than last month */}
       {spentMore.length > 0 && (
         <div style={card}>
-          <h3 style={{ fontWeight:700, marginBottom:16 }}>Where you spent more than last month</h3>
+          <h3 style={{ fontWeight:700, marginBottom:16, fontSize: isMobile ? 14 : 16 }}>Where you spent more than last month</h3>
           {spentMore.map(item => (
-            <div key={item.name} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
+            <div key={item.name} style={{
+              display:'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent:'space-between',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              padding:'8px 0',
+              borderBottom:'1px solid #f1f5f9',
+              gap: isMobile ? 4 : 0,
+            }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <div style={{ width:8, height:8, borderRadius:'50%', background:'#3b82f6' }}/>
                 <span style={{ fontSize:14 }}>{item.name}</span>
               </div>
-              <div style={{ display:'flex', gap:16 }}>
+              <div style={{ display:'flex', gap: isMobile ? 8 : 16, paddingLeft: isMobile ? 16 : 0 }}>
                 <span style={{ fontSize:13, color:'#94a3b8' }}>${item.prev.toFixed(2)} → ${item.curr.toFixed(2)}</span>
                 <span style={{ fontSize:13, fontWeight:700, color:'#ef4444' }}>+${item.diff.toFixed(2)}</span>
               </div>
@@ -134,38 +144,40 @@ export default function AnalyticsPage() {
 
       {/* Category trends YTD */}
       <div style={card}>
-        <h3 style={{ fontWeight:700, marginBottom:16 }}>Category trends (year to date)</h3>
-        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-          <thead>
-            <tr style={{ background:'#f8fafc' }}>
-              {['Category','First non-zero','Latest','Change','Trend'].map(h=>(
-                <th key={h} style={{ padding:'8px 12px', textAlign: h==='Category'?'left':'right', fontWeight:700, color:'#64748b' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {trends.map(row => (
-              <tr key={row.name} style={{ borderBottom:'1px solid #f1f5f9' }}>
-                <td style={{ padding:'8px 12px', display:'flex', alignItems:'center', gap:8 }}>
-                  <div style={{ width:8, height:8, borderRadius:'50%', background:'#3b82f6', flexShrink:0 }}/>
-                  {row.name}
-                </td>
-                <td style={{ padding:'8px 12px', textAlign:'right', color:'#64748b' }}>${row.first.toFixed(2)}</td>
-                <td style={{ padding:'8px 12px', textAlign:'right', color:'#64748b' }}>${row.latest.toFixed(2)}</td>
-                <td style={{ padding:'8px 12px', textAlign:'right', fontWeight:600, color: row.change>0?'#ef4444':row.change<0?'#22c55e':'#94a3b8' }}>
-                  {row.change>0?'+':''}{row.change.toFixed(2)}
-                </td>
-                <td style={{ padding:'8px 12px', textAlign:'right' }}>
-                  <span style={{ padding:'2px 10px', borderRadius:20, fontSize:11, fontWeight:600,
-                    background: row.trend==='Up'?'#fee2e2':row.trend==='Down'?'#dcfce7':'#f1f5f9',
-                    color: row.trend==='Up'?'#ef4444':row.trend==='Down'?'#16a34a':'#94a3b8' }}>
-                    {row.trend}
-                  </span>
-                </td>
+        <h3 style={{ fontWeight:700, marginBottom:16, fontSize: isMobile ? 14 : 16 }}>Category trends (year to date)</h3>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize: isMobile ? 12 : 13, minWidth: isMobile ? 480 : undefined }}>
+            <thead>
+              <tr style={{ background:'#f8fafc' }}>
+                {['Category','First','Latest','Change','Trend'].map(h=>(
+                  <th key={h} style={{ padding: isMobile ? '8px 6px' : '8px 12px', textAlign: h==='Category'?'left':'right', fontWeight:700, color:'#64748b', whiteSpace:'nowrap' }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {trends.map(row => (
+                <tr key={row.name} style={{ borderBottom:'1px solid #f1f5f9' }}>
+                  <td style={{ padding: isMobile ? '8px 6px' : '8px 12px', display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ width:8, height:8, borderRadius:'50%', background:'#3b82f6', flexShrink:0 }}/>
+                    <span style={{ whiteSpace:'nowrap' }}>{row.name}</span>
+                  </td>
+                  <td style={{ padding: isMobile ? '8px 6px' : '8px 12px', textAlign:'right', color:'#64748b' }}>${row.first.toFixed(2)}</td>
+                  <td style={{ padding: isMobile ? '8px 6px' : '8px 12px', textAlign:'right', color:'#64748b' }}>${row.latest.toFixed(2)}</td>
+                  <td style={{ padding: isMobile ? '8px 6px' : '8px 12px', textAlign:'right', fontWeight:600, color: row.change>0?'#ef4444':row.change<0?'#22c55e':'#94a3b8' }}>
+                    {row.change>0?'+':''}{row.change.toFixed(2)}
+                  </td>
+                  <td style={{ padding: isMobile ? '8px 6px' : '8px 12px', textAlign:'right' }}>
+                    <span style={{ padding:'2px 10px', borderRadius:20, fontSize:11, fontWeight:600,
+                      background: row.trend==='Up'?'#fee2e2':row.trend==='Down'?'#dcfce7':'#f1f5f9',
+                      color: row.trend==='Up'?'#ef4444':row.trend==='Down'?'#16a34a':'#94a3b8' }}>
+                      {row.trend}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
