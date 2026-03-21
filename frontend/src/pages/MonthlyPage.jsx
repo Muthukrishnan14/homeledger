@@ -276,6 +276,7 @@ export default function MonthlyPage() {
   const card = { background:'white', borderRadius:12, padding: isMobile ? 14 : 20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' };
 
   return (
+    <>
     <div style={{
       display: isMobile ? 'flex' : 'grid',
       flexDirection: 'column',
@@ -519,8 +520,10 @@ export default function MonthlyPage() {
         </div>
       )}
 
-      {/* Activity Log Drawer */}
-      <ActivityLogDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} month={monthKey} />
     </div>
+
+    {/* Activity Log Drawer — outside the grid */}
+    <ActivityLogDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} month={monthKey} />
+    </>
   );
 }
