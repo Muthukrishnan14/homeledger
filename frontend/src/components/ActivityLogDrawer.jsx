@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { activityLogsAPI } from '../api';
 import useIsMobile from '../useIsMobile';
 
@@ -36,10 +36,12 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [slideIn, setSlideIn] = useState(false);
+  const [filterCat, setFilterCat] = useState('all');
 
   useEffect(() => {
     if (open) {
       setLoading(true);
+      setFilterCat('all');
       activityLogsAPI.getByMonth(month).then(r => {
         setLogs(r.data);
         setLoading(false);
@@ -57,9 +59,25 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
 
   if (!open) return null;
 
+  // Extract unique categories for filter
+  const categories = useMemo(() => {
+    const seen = {};
+    logs.forEach(log => {
+      const catName = log.subCategoryId?.categoryId?.name;
+      if (catName && !seen[catName]) seen[catName] = true;
+    });
+    return Object.keys(seen).sort();
+  }, [logs]);
+
+  // Filter logs by selected category
+  const filteredLogs = useMemo(() => {
+    if (filterCat === 'all') return logs;
+    return logs.filter(log => log.subCategoryId?.categoryId?.name === filterCat);
+  }, [logs, filterCat]);
+
   // Group by date label
   const grouped = {};
-  logs.forEach(log => {
+  filteredLogs.forEach(log => {
     const label = getDateLabel(log.createdAt);
     if (!grouped[label]) grouped[label] = [];
     grouped[label].push(log);
@@ -119,14 +137,45 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
           }}>✕</button>
         </div>
 
+        {/* Category filter */}
+        {categories.length > 1 && (
+          <div style={{
+            padding: '10px 16px', borderBottom: '1px solid #f1f5f9',
+            display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0,
+          }}>
+            <button onClick={() => setFilterCat('all')}
+              style={{
+                padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 600,
+                background: filterCat === 'all' ? '#3b82f6' : '#f1f5f9',
+                color: filterCat === 'all' ? 'white' : '#64748b',
+              }}>
+              All
+            </button>
+            {categories.map(cat => (
+              <button key={cat} onClick={() => setFilterCat(cat)}
+                style={{
+                  padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600,
+                  background: filterCat === cat ? '#3b82f6' : '#f1f5f9',
+                  color: filterCat === cat ? 'white' : '#64748b',
+                }}>
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
           {loading ? (
             <div style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>Loading...</div>
-          ) : logs.length === 0 ? (
+          ) : filteredLogs.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-              <div style={{ fontSize: 14 }}>No activity yet this month</div>
+              <div style={{ fontSize: 14 }}>
+                {filterCat === 'all' ? 'No activity yet this month' : `No activity for ${filterCat}`}
+              </div>
             </div>
           ) : (
             Object.entries(grouped).map(([label, entries]) => (
