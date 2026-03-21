@@ -279,10 +279,10 @@ export default function MonthlyPage() {
     <>
     <div style={{
       display: isMobile ? 'flex' : 'grid',
-      flexDirection: 'column',
-      gridTemplateColumns: '1fr 280px',
+      flexDirection: isMobile ? 'column' : undefined,
+      gridTemplateColumns: isMobile ? undefined : '1fr 280px',
       gap: isMobile ? 12 : 16,
-      alignItems: 'start',
+      alignItems: isMobile ? 'stretch' : 'start',
     }}>
 
       <div style={{ display:'flex', flexDirection:'column', gap: isMobile ? 12 : 16 }}>
