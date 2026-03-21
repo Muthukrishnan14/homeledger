@@ -58,9 +58,7 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
     setTimeout(onClose, 250);
   };
 
-  if (!open) return null;
-
-  // Extract unique categories for filter
+  // Extract unique categories for filter (must be before early return — Rules of Hooks)
   const categories = useMemo(() => {
     const seen = {};
     logs.forEach(log => {
@@ -75,6 +73,8 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
     if (filterCat === 'all') return logs;
     return logs.filter(log => log.subCategoryId?.categoryId?.name === filterCat);
   }, [logs, filterCat]);
+
+  if (!open) return null;
 
   // Group by date label
   const grouped = {};
