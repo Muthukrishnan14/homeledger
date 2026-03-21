@@ -364,25 +364,6 @@ export default function MonthlyPage() {
           })}
         </div>
 
-        {/* Donut chart — shown at top on mobile */}
-        {isMobile && (
-          <div style={{ ...card, position: 'relative' }}>
-            <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Breakdown — {MONTHS[month-1]}</div>
-            <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
-              <DonutChart segments={segments} total={total} size={160}/>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 12px' }}>
-              {segments.map((s,i)=>(
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 0', borderBottom:'1px solid #f8fafc' }}>
-                  <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
-                  <div style={{ flex:1, fontSize:11, color:'#475569' }}>{s.name}</div>
-                  <div style={{ fontWeight:700, fontSize:11 }}>${s.value.toLocaleString()}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Category groups */}
         {categories.map((cat, ci) => {
           const subs = grouped[cat._id] || [];
@@ -498,6 +479,25 @@ export default function MonthlyPage() {
             </div>
           );
         })}
+
+        {/* Donut chart — shown at bottom on mobile */}
+        {isMobile && segments.length > 0 && (
+          <div style={{ ...card, position: 'relative' }}>
+            <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Breakdown — {MONTHS[month-1]}</div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
+              <DonutChart segments={segments} total={total} size={160}/>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 12px' }}>
+              {segments.map((s,i)=>(
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 0', borderBottom:'1px solid #f8fafc' }}>
+                  <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
+                  <div style={{ flex:1, fontSize:11, color:'#475569' }}>{s.name}</div>
+                  <div style={{ fontWeight:700, fontSize:11 }}>${s.value.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Donut sidebar — desktop only */}
