@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { activityLogsAPI } from '../api';
 import useIsMobile from '../useIsMobile';
 
@@ -103,7 +104,7 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
     );
   };
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div onClick={handleClose} style={{
@@ -243,6 +244,7 @@ export default function ActivityLogDrawer({ open, onClose, month }) {
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
